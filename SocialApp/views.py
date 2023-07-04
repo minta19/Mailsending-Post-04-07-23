@@ -70,14 +70,13 @@ def create_post(request):
             plain_message=strip_tags(html_message)
             from_email=settings.DEFAULT_FROM_EMAIL
             recipient_list=[request.user.email]
-            connection = get_connection()
-            try:
-                connection.open()
-                message = EmailMultiAlternatives(subject, plain_message, from_email, recipient_list, connection=connection)
-                message.attach_alternative(html_message, "text/html")
-                message.send()
-            finally:
-                connection.close()
+            message=EmailMultiAlternatives(subject,plain_message,from_email,recipient_list)
+            image_path = post.image_or_video.path
+            with open(image_path,'rb') as file:
+                message.attach('post_image.jpg',file.read(),'image/jpg')
+            message.attach_alternative(html_message, "text/html")
+            message.send()
+            
 
             return redirect('dashboard')  
     else:
