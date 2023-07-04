@@ -27,3 +27,6 @@ __pycache__/
 
 # Ignore sensitive or private files
 secret_key.txt
+
+# Ignore .env file
+.env
