@@ -4,9 +4,13 @@ from django.contrib.auth.forms import get_user_model
 from django.contrib.auth import authenticate,login,logout
 from .models import Post,Profile,FollowersCount
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
+from django.conf import settings
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.core.mail import EmailMultiAlternatives
 
-
-
+User=get_user_model()
 def home(request):
     return render(request,'socialapp/home.html')
 
@@ -60,6 +64,18 @@ def create_post(request):
             post = form.save(commit=False)
             post.user = request.user
             post.save()
+
+            subject='NEW POST CREATED'
+            html_message=render_to_string('post_email.html',{'post':post})
+            plain_message=strip_tags(html_message)
+            from_email=settings.DEFAULT_FROM_EMAIL
+            recipient_list=[request.user.email]
+            message=EmailMultiAlternatives(subject,plain_message,from_email,recipient_list)
+            image_path = post.image_or_video.path
+            with open(image_path,'rb') as file:
+                message.attach('post_image.jpg',file.read(),'image/jpg')
+            message.attach_alternative(html_message, "text/html")
+            message.send()
             return redirect('dashboard')  
     else:
         form = CreatePostForm()
