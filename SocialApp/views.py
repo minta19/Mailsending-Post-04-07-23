@@ -8,7 +8,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives,get_connection
 
 User=get_user_model()
 def home(request):
@@ -70,12 +70,15 @@ def create_post(request):
             plain_message=strip_tags(html_message)
             from_email=settings.DEFAULT_FROM_EMAIL
             recipient_list=[request.user.email]
-            message=EmailMultiAlternatives(subject,plain_message,from_email,recipient_list)
-            image_path = post.image_or_video.path
-            with open(image_path,'rb') as file:
-                message.attach('post_image.jpg',file.read(),'image/jpg')
-            message.attach_alternative(html_message, "text/html")
-            message.send()
+            connection = get_connection()
+            try:
+                connection.open()
+                message = EmailMultiAlternatives(subject, plain_message, from_email, recipient_list, connection=connection)
+                message.attach_alternative(html_message, "text/html")
+                message.send()
+            finally:
+                connection.close()
+
             return redirect('dashboard')  
     else:
         form = CreatePostForm()
